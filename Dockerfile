@@ -2,4 +2,4 @@ FROM apache/airflow:2.4.1
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-ENV AIRFLOW_HOME=/usr/local/airflow
+FROM metabase/metabase:latest
