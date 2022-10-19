@@ -37,16 +37,16 @@ create_psql_table_orders = PostgresOperator(
 
 load_csv = PythonOperator(
     task_id="load_csv",
-    python_callable=read_orders_csv
+    python_callable=read_orders_csv,
+    dag=dag
 )
 
-get_params = PythonOperator(
+params = PythonOperator(
     task_id="get_params",
     python_callable=get_params,
-    params=load_csv
+    params=load_csv,
+    dag=dag
 )
-for row in load_csv:
-
 
 save_to_db = PostgresOperator(
     task_id="save_to_db",
@@ -55,7 +55,8 @@ save_to_db = PostgresOperator(
         INSERT INTO orders
         VALUES %s
     """,
-    params=get_params
+    params=params,
+    dag=dag
 )
 
-create_psql_table_orders >> load_csv >> get_params >> save_to_db
+create_psql_table_orders >> load_csv >> params >> save_to_db
