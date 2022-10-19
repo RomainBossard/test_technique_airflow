@@ -1,9 +1,12 @@
 from airflow import DAG
 from datetime import datetime, timedelta
-from airflow.operators.bash import BashOperator
+from airflow.utils.trigger_rule import TriggerRule
 from airflow.providers.operators.postgres import PostgresOperator
+from airflow.operators.python import PythonOperator
+from dags.tasks.csv import read_orders_csv, get_params
 
-with DAG(
+
+dag = DAG(
     'BI_pipeline',
     default_args={
         'depends_on_past': False,
@@ -15,28 +18,44 @@ with DAG(
     start_date=datetime(2022, 10, 15),
     catchup=False,
     tags=['bi_pipeline'],
-) as dag:
-    create_psql_table_orders = PostgresOperator(
-        task_id="create_psql_table_orders",
-        postgres_conn_id="airflow",
-        sql="""
-            CREATE TABLE IF NOT EXISTS postgres.orders (
-                id              INT,
-                user_id         INT,
-                completed_at    DATETIME,
-                item_total      DECIMAL(10,2),
-                shipment_total  DECIMAL(10,2)
-                );
-        """,
-        dag=dag
-    )
-    read_csv = BashOperator(
-        task_id='read_csv',
-        bash_command=''
-    )
-    save_to_db = BashOperator(
-        task_id='save_to_db',
-        bash_command=''
-    )
+)
 
-    create_psql_table_orders >> read_csv >> save_to_db
+create_psql_table_orders = PostgresOperator(
+    task_id="create_psql_table_orders",
+    postgres_conn_id="postgres_default",
+    sql="""
+        CREATE TABLE IF NOT EXISTS orders (
+            id              INT,
+            user_id         INT,
+            completed_at    DATETIME,
+            item_total      DECIMAL(10,2),
+            shipment_total  DECIMAL(10,2)
+            );
+    """,
+    dag=dag
+)
+
+load_csv = PythonOperator(
+    task_id="load_csv",
+    python_callable=read_orders_csv
+)
+
+get_params = PythonOperator(
+    task_id="get_params",
+    python_callable=get_params,
+    params=load_csv
+)
+for row in load_csv:
+
+
+save_to_db = PostgresOperator(
+    task_id="save_to_db",
+    postgres_conn_id="postgres_localhost",
+    sql="""
+        INSERT INTO orders
+        VALUES %s
+    """,
+    params=get_params
+)
+
+create_psql_table_orders >> load_csv >> get_params >> save_to_db
