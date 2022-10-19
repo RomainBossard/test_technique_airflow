@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_USER: airflow
       POSTGRES_PASSWORD: airflow
-      POSTGRES_DB: airflow
+      POSTGRES_DB: postgres
     volumes:
       - postgres-db-volume:/var/lib/postgresql/data
 
@@ -35,6 +35,16 @@ services:
     volumes:
         - ./dags:/opt/airflow/dags
         - ./logs:/opt/airflow/logs
+
+  pgadmin:
+    container_name: pgadmin4_container
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: root
+    ports:
+      - "5050:80"
 
 volumes:
   postgres-db-volume:

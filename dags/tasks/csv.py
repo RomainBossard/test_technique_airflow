@@ -1,28 +1,15 @@
 import os
 from os.path import isfile, join
-from csv import DictReader
-from typing import List, Dict
+from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 
-AIRFLOW_HOME = os.getenv('AIRFLOW_HOME')
-DATA_PATH = AIRFLOW_HOME + '/dags/data/'
+DATA_PATH = 'dags/data/'
 
 
-def read_orders_csv() -> List[Dict]:
+def save_csv_to_db(table_name):
+    pg_hook = PostgresHook(potgres_conn_id="postgres_default")
     files = [f for f in os.listdir(DATA_PATH) if isfile(join(DATA_PATH, f))]
-    orders = []
-    for file in files:
-        with open(join(DATA_PATH, file)) as csvfile:
-            csv = DictReader(csvfile)
-            for row in csv:
-                orders.append(row)
-    return orders
-
-
-def get_params(data: List[Dict]) -> str:
-    response = "('"
-    for row in data:
-        response += ','.join(list(row.values()))
-        response += "'),('"
-    response = response[:-3]
-    return response
+    with pg_hook.get_conn() as connection:
+        for file in files:
+            pg_hook.copy_expert(f"""COPY {table_name} FROM stdin WITH CSV HEADER DELIMITER AS ','""", join(DATA_PATH, file))
+            connection.commit()
