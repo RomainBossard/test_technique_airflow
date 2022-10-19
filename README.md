@@ -32,3 +32,14 @@ password: airflow
 port: 5432
 
 db: airflow
+
+
+## Analysis average basket value:
+From July 1st to september 30 , average basket is 51.73€, growing up in september.
+
+
+## Analysis  average tome between orders
+Unfortunately, there was not enough time left for this analysis
+
+
+
