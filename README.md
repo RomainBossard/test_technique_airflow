@@ -23,7 +23,7 @@ host:
 
     docker inspect *id_of_postgres_container*
     
-    user value in IPAdsress
+    host value in IPAddress
 
 user: airflow
 
@@ -33,9 +33,11 @@ port: 5432
 
 db: airflow
 
+*Unfortunately, the IP is always changing while laucunhing the docker container. With more time, I would have fix this to have a metabase on launch without configuration*
 
 ## Analysis average basket value:
 From July 1st to september 30 , average basket is 51.73€, growing up in september.
+*seems like metabase do not save questions from one session to another, maybe due to the fact that the database is hanging with each container launch*
 
 
 ## Analysis  average tome between orders
